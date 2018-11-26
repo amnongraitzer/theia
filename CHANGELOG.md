@@ -9,6 +9,7 @@
 - [cpp] Use `Option+Command+o` instead of `Option+o` on macOS for 'Switch Header/Source'
 - [core] Add a preference to define how to handle application exit.
 - [core] Add a way to prevent application exit from extensions.
+- [core] Prevent application exit if some editors are dirty.
 
 
 ## v0.3.16
