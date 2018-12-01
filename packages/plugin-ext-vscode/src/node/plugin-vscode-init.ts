@@ -41,11 +41,33 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
     }
 
     // replace command API as it will send only the ID as a string parameter
-    vscode.commands.registerCommand = function registerCommand(command: any, handler?: <T>(...args: any[]) => T | Thenable<T>): any {
+    const registerCommand = vscode.commands.registerCommand;
+    vscode.commands.registerCommand = function (command: any, handler?: <T>(...args: any[]) => T | Thenable<T>): any {
         // use of the ID when registering commands
         if (typeof command === 'string' && handler) {
             return vscode.commands.registerHandler(command, handler);
         }
+        return registerCommand(command, handler);
+    };
+
+    // replace createWebviewPanel API for override html setter
+    const createWebviewPanel = vscode.window.createWebviewPanel;
+    vscode.window.createWebviewPanel = function (viewType: string, title: string, showOptions: any, options: any | undefined): any {
+        const panel = createWebviewPanel(viewType, title, showOptions, options);
+        const propertyName = 'html';
+
+        const originDescriptor = Object.getOwnPropertyDescriptor(panel.webview, propertyName);
+        if (originDescriptor !== undefined && originDescriptor.hasOwnProperty('set')) {
+            // redefine property
+            Object.defineProperty(panel.webview, propertyName, {
+                set: function (html: string) {
+                    const newHtml = html.replace('vscode-resource:/', '/webview/');
+                    (<{ set: Function }>originDescriptor).set(newHtml);
+                }
+            });
+        }
+
+        return panel;
     };
 
     // use Theia plugin api instead vscode extensions
